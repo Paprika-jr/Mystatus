@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LIN // SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0a;
+    --ink: #e8e0d0;
+    --red: #c0392b;
+    --dim: #3a3530;
+    --gold: #c9a84c;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.5;
+  }
+
+  /* scanlines */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 998;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 24px;
+  }
+
+  /* HEADER */
+  header {
+    border-left: 3px solid var(--red);
+    padding-left: 20px;
+    margin-bottom: 80px;
+    animation: fadeSlide 0.8s ease forwards;
+    opacity: 0;
+  }
+
+  .sys-label {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 12vw, 110px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+  }
+
+  h1 span {
+    color: var(--red);
+  }
+
+  .tagline {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.15em;
+  }
+
+  /* GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    margin-bottom: 2px;
+  }
+
+  .card {
+    background: #111;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    animation: fadeSlide 0.6s ease forwards;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.2s; }
+  .card:nth-child(2) { animation-delay: 0.35s; }
+  .card:nth-child(3) { animation-delay: 0.5s; grid-column: 1 / -1; }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .card:hover::before { transform: scaleX(1); }
+
+  .card:hover { background: #161616; }
+
+  .card-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--red);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    color: var(--ink);
+  }
+
+  .card-body {
+    font-size: 12px;
+    line-height: 1.8;
+    color: #888;
+  }
+
+  /* STACK BAR */
+  .stack-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .stack-label {
+    font-size: 11px;
+    color: var(--dim);
+    width: 90px;
+    flex-shrink: 0;
+    letter-spacing: 0.1em;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 3px;
+    background: #1e1e1e;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    position: absolute;
+    top: 0; left: 0; height: 100%;
+    background: var(--red);
+    width: 0;
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .bar-fill.gold { background: var(--gold); }
+
+  /* MUSIC BANDS */
+  .bands {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .band-tag {
+    border: 1px solid var(--dim);
+    padding: 4px 12px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--dim);
+    text-transform: uppercase;
+    transition: all 0.2s;
+    cursor: default;
+  }
+
+  .band-tag:hover {
+    border-color: var(--red);
+    color: var(--ink);
+  }
+
+  .band-tag.active {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* FULL WIDTH CARD */
+  .wide-card {
+    background: #111;
+    padding: 28px;
+    margin-bottom: 2px;
+    opacity: 0;
+    animation: fadeSlide 0.6s ease forwards;
+    animation-delay: 0.65s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wide-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gold);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .wide-card:hover::before { transform: scaleX(1); }
+
+  .status-row {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .status-key {
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .status-val {
+    font-size: 13px;
+    color: var(--ink);
+    letter-spacing: 0.05em;
+  }
+
+  /* FOOTER */
+  footer {
+    margin-top: 60px;
+    border-top: 1px solid #1a1a1a;
+    padding-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    opacity: 0;
+    animation: fadeSlide 0.6s ease forwards;
+    animation-delay: 0.85s;
+  }
+
+  .footer-tag {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.2em;
+  }
+
+  /* CURSOR DOT */
+  .cursor {
+    position: fixed;
+    width: 6px; height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translate(-50%, -50%);
+    transition: transform 0.05s;
+  }
+
+  /* BLINK */
+  .blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  /* GUITAR STRING ANIMATION */
+  .guitar-line {
+    display: block;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 6px 0;
+    transform-origin: left;
+    animation: strum 3s ease-in-out infinite;
+  }
+
+  .guitar-line:nth-child(2) { animation-delay: 0.1s; opacity: 0.7; }
+  .guitar-line:nth-child(3) { animation-delay: 0.2s; opacity: 0.5; }
+  .guitar-line:nth-child(4) { animation-delay: 0.3s; opacity: 0.4; }
+  .guitar-line:nth-child(5) { animation-delay: 0.4s; opacity: 0.3; }
+  .guitar-line:nth-child(6) { animation-delay: 0.5s; opacity: 0.2; }
+
+  @keyframes strum {
+    0%, 100% { transform: scaleY(1); }
+    10% { transform: scaleY(3); }
+    20% { transform: scaleY(1.5); }
+    30% { transform: scaleY(2); }
+    40% { transform: scaleY(1); }
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    .card:nth-child(3) { grid-column: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<div class="container">
+
+  <header>
+    <div class="sys-label">// SYSTEM PROFILE &nbsp;–&nbsp; LIN.EXE &nbsp;<span class="blink">▌</span></div>
+    <h1>KHUN HTET<br/><span>LIN AUNG</span></h1>
+    <div class="tagline">ICT STUDENT &nbsp;·&nbsp; JYVÄSKYLÄ, FI</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- STACK -->
+    <div class="card">
+      <div class="card-label">// Tech Stack</div>
+      <div class="card-title">WHAT I BUILD</div>
+      <div id="bars">
+        <div class="stack-item"><span class="stack-label">React</span><div class="bar-track"><div class="bar-fill" data-w="90"></div></div></div>
+        <div class="stack-item"><span class="stack-label">Node/Express</span><div class="bar-track"><div class="bar-fill" data-w="82"></div></div></div>
+        <div class="stack-item"><span class="stack-label">MongoDB</span><div class="bar-track"><div class="bar-fill" data-w="75"></div></div></div>
+        <div class="stack-item"><span class="stack-label">Python</span><div class="bar-track"><div class="bar-fill gold" data-w="72"></div></div></div>
+        <div class="stack-item"><span class="stack-label">Firebase</span><div class="bar-track"><div class="bar-fill" data-w="70"></div></div></div>
+        <div class="stack-item"><span class="stack-label">Security</span><div class="bar-track"><div class="bar-fill gold" data-w="65"></div></div></div>
+      </div>
+    </div>
+
+    <!-- MUSIC -->
+    <div class="card">
+      <div class="card-label">// Sound System</div>
+      <div class="card-title">WHAT I PLAY</div>
+      <div style="margin-bottom:14px;">
+        <span class="guitar-line"></span>
+        <span class="guitar-line"></span>
+        <span class="guitar-line"></span>
+        <span class="guitar-line"></span>
+        <span class="guitar-line"></span>
+        <span class="guitar-line"></span>
+      </div>
+      <div class="bands">
+        <span class="band-tag active">Dance Gavin Dance</span>
+        <span class="band-tag active">Polaris</span>
+        <span class="band-tag">Periphery</span>
+        <span class="band-tag">Guitar</span>
+        <span class="band-tag">Post-Hardcore</span>
+        <span class="band-tag">Prog Metal</span>
+      </div>
+      <div class="card-body" style="margin-top:14px;">
+        Favourite: <span style="color:var(--gold)">Die Another Day</span> &amp; <span style="color:var(--gold)">Relapse</span>
+      </div>
+    </div>
+
+    <!-- CURRENT OPS -->
+    <div class="card">
+      <div class="card-label">// Active Ops</div>
+      <div class="card-title">CURRENT MISSIONS</div>
+      <div class="card-body">
+        Sewing shop website (React · MongoDB · Vercel) &nbsp;·&nbsp;
+        Web Security OWASP Lab &nbsp;·&nbsp;
+        System Integration & ERP/CRM research &nbsp;·&nbsp;
+        PrestaShop Webservice API
+      </div>
+    </div>
+
+  </div>
+
+  <!-- STATUS -->
+  <div class="wide-card">
+    <div class="card-label">// System Status</div>
+    <div class="status-row">
+      <div class="status-item">
+        <span class="status-key">Location</span>
+        <span class="status-val">Jyväskylä, Finland</span>
+      </div>
+      <div class="status-item">
+        <span class="status-key">Previous Internship</span>
+        <span class="status-val">Witas.oy Digikeskus</span>
+      </div>
+      <div class="status-item">
+        <span class="status-key">Year</span>
+        <span class="status-val">ICT · Y2</span>
+      </div>
+      <div class="status-item">
+        <span class="status-key">Native Lang</span>
+        <span class="status-val">Burmese 🇲🇲</span>
+      </div>
+      <div class="status-item">
+        <span class="status-key">Mode</span>
+        <span class="status-val" style="color:var(--gold)">ACTIVE <span class="blink">●</span></span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span class="footer-tag">// JARVIS ONLINE</span>
+    <span class="footer-tag">UPTIME: 100% <span class="blink">▌</span></span>
+  </footer>
+
+</div>
+
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Animate bars on load
+  setTimeout(() => {
+    document.querySelectorAll('.bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.w + '%';
+    });
+  }, 600);
+</script>
+</body>
+</html>
